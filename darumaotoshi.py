@@ -14,7 +14,10 @@ class MyHTMLParser(HTMLParser):
         print("Data     :", data)
 
 # HTMLを取得
-html = "<html><body><p>Hello, World!</p></body></html>"
+html = ""
+with open(r'./tests/bowling_game_cli/index.html', 'r', encoding='utf-8') as file:
+    html = file.read()
+    print(html)
 
 # HTMLをパース
 parser = MyHTMLParser()
