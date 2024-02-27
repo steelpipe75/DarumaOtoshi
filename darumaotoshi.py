@@ -7,9 +7,9 @@ from html.parser import HTMLParser
 class indexHTMLParser(HTMLParser):
     def __init__(self, *, convert_charrefs: bool = True) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
-        self.link_targets = []
-        self.data_list = []
-        self.data_append_required = False
+        self.files = []
+        self.file_info = { 'href':'', 'data':'' }
+        self.append_required = False
 
     def handle_starttag(self, tag, attrs):
         # print("Start tag:", tag)
@@ -21,8 +21,8 @@ class indexHTMLParser(HTMLParser):
             link_target = attrs[0][1]
             pattern = r"^coverage/"
             if re.search(pattern, link_target):
-                self.link_targets.append(link_target)
-                self.data_append_required = True
+                self.file_info['href'] = link_target
+                self.append_required = True
             outputfile.write('>')
         else:
             outputfile.write('>\n')
@@ -34,9 +34,11 @@ class indexHTMLParser(HTMLParser):
     def handle_data(self, data):
         # print("Data     :", data)
         outputfile.write(data)
-        if self.data_append_required:
-            self.data_list.append(data)
-        self.data_append_required = False
+        if self.append_required:
+            self.file_info['data'] = data
+            self.files.append(self.file_info)
+        self.append_required = False
+        self.file_info = { 'href':'', 'data':'' }
 
 def make_dir_helper(target_path):
     if not os.path.exists(target_path):
@@ -68,6 +70,11 @@ with open(output_index_html, 'w', encoding='utf-8') as outputfile:
     parser.feed(html)
     parser.close()
 
-    print(parser.link_targets)
-    print(parser.data_list)
+# print(parser.files)
+
+for file_info in parser.files:
+    src_path = os.path.join(input_dir, file_info['href'])
+    dst_path = os.path.join(output_dir, file_info['data'] + '.html')
+    print(src_path + ' -> ' + dst_path)
+    # shutil.copy(src_path, dst_path)
 
