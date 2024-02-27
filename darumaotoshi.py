@@ -1,9 +1,16 @@
 import os
 import shutil
+import re
 from html.parser import HTMLParser
 
 # HTMLをパースするためのクラスを定義
-class MyHTMLParser(HTMLParser):
+class indexHTMLParser(HTMLParser):
+    def __init__(self, *, convert_charrefs: bool = True) -> None:
+        super().__init__(convert_charrefs=convert_charrefs)
+        self.link_targets = []
+        self.data_list = []
+        self.data_append_required = False
+
     def handle_starttag(self, tag, attrs):
         # print("Start tag:", tag)
         outputfile.write('<' + tag)
@@ -11,6 +18,11 @@ class MyHTMLParser(HTMLParser):
             # print("  Attribute:", attr)
             outputfile.write(' ' + attr[0] + "='" + attr[1] + "'")
         if tag == 'a':
+            link_target = attrs[0][1]
+            pattern = r"^coverage/"
+            if re.search(pattern, link_target):
+                self.link_targets.append(link_target)
+                self.data_append_required = True
             outputfile.write('>')
         else:
             outputfile.write('>\n')
@@ -22,6 +34,9 @@ class MyHTMLParser(HTMLParser):
     def handle_data(self, data):
         # print("Data     :", data)
         outputfile.write(data)
+        if self.data_append_required:
+            self.data_list.append(data)
+        self.data_append_required = False
 
 def make_dir_helper(target_path):
     if not os.path.exists(target_path):
@@ -49,7 +64,10 @@ with open(output_index_html, 'w', encoding='utf-8') as outputfile:
     outputfile.write('<!doctype html>\n')
 
     # HTMLをパース
-    parser = MyHTMLParser()
+    parser = indexHTMLParser()
     parser.feed(html)
     parser.close()
+
+    print(parser.link_targets)
+    print(parser.data_list)
 
