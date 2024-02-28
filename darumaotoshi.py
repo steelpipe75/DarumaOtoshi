@@ -96,7 +96,7 @@ def copy_coverage_html(src_path: str, dst_path: str):
             with open(src_path, 'r', encoding='utf-8') as src_file:
                 src_html = src_file.read()
 
-            dst_file.write('<!doctype html>\n')
+            dst_file.write('<!doctype html>')
 
             # HTMLをパース
             cov_parser = coverageHTMLParser(css_path = css_path)
@@ -129,7 +129,7 @@ with open(output_index_html, 'w', encoding='utf-8') as outputfile:
         html_str = inputfile.read()
         # print(html_str)
 
-    outputfile.write('<!doctype html>\n')
+    outputfile.write('<!doctype html>')
 
     # HTMLをパース
     parser = indexHTMLParser()
