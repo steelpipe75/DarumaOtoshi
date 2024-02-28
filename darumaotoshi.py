@@ -1,6 +1,7 @@
 import os
 import shutil
 import re
+import html
 from html.parser import HTMLParser
 
 # index.htmlをパースするためのクラスを定義
@@ -43,7 +44,7 @@ class indexHTMLParser(HTMLParser):
             outputfile.write(' href' + "='" + os.path.normpath(os.path.join('coverage', data) + ".html'>").replace('\\', '/'))
         self.append_required = False
         self.file_info = { 'href':'', 'data':'' }
-        outputfile.write(data)
+        outputfile.write(html.escape(data))
 
 
 # 各ソースのカバレッジデータhtmlをパースするためのクラスを定義
@@ -76,7 +77,7 @@ class coverageHTMLParser(HTMLParser):
         self.convert_str += ('</' + tag + '>')
 
     def handle_data(self, data):
-        self.convert_str += (data) # todo エスケープシーケンス
+        self.convert_str += html.escape(data)
 
 
 
@@ -107,7 +108,7 @@ def copy_coverage_html(src_path: str, dst_path: str):
 
 
 # HTMLを取得
-html = ''
+html_str = ''
 input_index_html = './tests/bowling_game_cli/index.html'
 input_dir = os.path.dirname(input_index_html)
 # print(input_dir)
@@ -125,14 +126,14 @@ output_index_html = os.path.join(output_dir, 'index.html')
 # print(output_index_html)
 with open(output_index_html, 'w', encoding='utf-8') as outputfile:
     with open(input_index_html, 'r', encoding='utf-8') as inputfile:
-        html = inputfile.read()
-        # print(html)
+        html_str = inputfile.read()
+        # print(html_str)
 
     outputfile.write('<!doctype html>\n')
 
     # HTMLをパース
     parser = indexHTMLParser()
-    parser.feed(html)
+    parser.feed(html_str)
     parser.close()
 
 # print(parser.files)
