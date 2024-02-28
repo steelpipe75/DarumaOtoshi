@@ -24,16 +24,16 @@ class indexHTMLParser(HTMLParser):
                 for attr in attrs:
                     # print("  Attribute:", attr)
                     outputfile.write(' ' + attr[0] + "='" + attr[1] + "'")
-                outputfile.write('>\n')
+                outputfile.write('>')
         else:
             for attr in attrs:
                 # print("  Attribute:", attr)
                 outputfile.write(' ' + attr[0] + "='" + attr[1] + "'")
-            outputfile.write('>\n')
+            outputfile.write('>')
 
     def handle_endtag(self, tag):
         # print("End tag  :", tag)
-        outputfile.write('</' + tag + '>\n')
+        outputfile.write('</' + tag + '>')
 
     def handle_data(self, data):
         # print("Data     :", data)
@@ -63,20 +63,20 @@ class coverageHTMLParser(HTMLParser):
                     self.convert_str += (' ' + 'href' + "='" + self.css_path + "'")
                 else:
                     self.convert_str += (' ' + attr[0] + "='" + attr[1] + "'")
-            self.convert_str += ('>\n')
+            self.convert_str += ('>')
         else:
             self.convert_str += ('<' + tag)
             for attr in attrs:
                 # print("  Attribute:", attr)
                 self.convert_str += (' ' + attr[0] + "='" + attr[1] + "'")
-            self.convert_str += ('>\n')
+            self.convert_str += ('>')
 
     def handle_endtag(self, tag):
         # print("End tag  :", tag)
-        self.convert_str += ('</' + tag + '>\n')
+        self.convert_str += ('</' + tag + '>')
 
     def handle_data(self, data):
-        self.convert_str += (data)
+        self.convert_str += (data) # todo エスケープシーケンス
 
 
 
