@@ -92,7 +92,7 @@ def copy_coverage_html(src_path: str, dst_path: str, output_style_css_path: str)
 
         relative_path = os.path.normpath(os.path.relpath(output_style_css_path, dst_dir))
         css_path = relative_path.replace('\\', '/')
-        print(css_path)
+        # print(css_path)
 
         with open(dst_path, 'w', encoding='utf-8') as dst_file:
             with open(src_path, 'r', encoding='utf-8') as src_file:
@@ -107,8 +107,10 @@ def copy_coverage_html(src_path: str, dst_path: str, output_style_css_path: str)
 
 
 def darmaotoshi(input_index_html: str, output_dir: str):
-    # HTMLを取得
     html_str = ''
+
+    input_index_html = os.path.normpath(input_index_html.replace('\\', '/'))
+
     input_dir = os.path.dirname(input_index_html)
     # print(input_dir)
 
@@ -118,10 +120,11 @@ def darmaotoshi(input_index_html: str, output_dir: str):
     print('*** ' + src_path + ' -> ' + dst_path)
     ret = shutil.copy(src_path, dst_path)
 
-    output_style_css_path = os.path.join(output_dir, 'style.css')
+    output_style_css_path = os.path.normpath((os.path.join(output_dir, 'style.css')).replace('\\', '/'))
     # print(output_style_css_path)
-    output_index_html = os.path.join(output_dir, 'index.html')
+    output_index_html = os.path.normpath((os.path.join(output_dir, 'index.html')).replace('\\', '/'))
     # print(output_index_html)
+    print('@@@ ' + input_index_html + ' -> ' + output_index_html)
     with open(output_index_html, 'w', encoding='utf-8') as outputfile:
         with open(input_index_html, 'r', encoding='utf-8') as inputfile:
             html_str = inputfile.read()
@@ -156,6 +159,9 @@ def arg_parse():
 
     # コマンドライン引数のパース
     args = parser.parse_args()
+
+    print(f'Processing HTML file: {args.input_file}')
+    print(f'Output directory: {args.output_dir}')
 
     # パースされた引数を使って処理を行う
     return args.input_file, args.output_dir
