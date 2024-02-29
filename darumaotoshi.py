@@ -112,7 +112,6 @@ def darmaotoshi(input_index_html: str, output_dir: str):
     input_dir = os.path.dirname(input_index_html)
     # print(input_dir)
 
-    output_dir = './output'
     os.makedirs(output_dir, exist_ok=True)
     src_path = os.path.normpath((os.path.join(input_dir, 'style.css')).replace('\\', '/'))
     dst_path = os.path.normpath((os.path.join(output_dir, 'style.css')).replace('\\', '/'))
