@@ -22,7 +22,11 @@ def arg_parse():
 
     # 出力ディレクトリを指定するオプションを追加
     parser.add_argument(
-        "-o", "--output", dest="output_dir", default="output", help="output directory"
+        "-o",
+        "--output",
+        dest="output_dir",
+        default="output",
+        help="output directory"
     )
 
     # コマンドライン引数のパース

@@ -8,14 +8,17 @@ from io import TextIOWrapper
 
 # index.htmlをパースするためのクラスを定義
 class indexHTMLParser(HTMLParser):
-    def __init__(self, out: TextIOWrapper, *, convert_charrefs: bool = True) -> None:
+    def __init__(
+        self, out: TextIOWrapper,
+        *, convert_charrefs: bool = True
+    ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.files = []
         self.file_info = {"href": "", "data": ""}
         self.append_required = False
         self.out = out
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs) -> None:
         # print("Start tag:", tag)
         self.out.write("<" + tag)
         if tag == "a":
@@ -35,22 +38,20 @@ class indexHTMLParser(HTMLParser):
                 self.out.write(" " + attr[0] + "='" + attr[1] + "'")
             self.out.write(">")
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         # print("End tag  :", tag)
         self.out.write("</" + tag + ">")
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         # print("Data     :", data)
         if self.append_required:
             self.file_info["data"] = data
             self.files.append(self.file_info)
-            self.out.write(
-                " href"
-                + "='"
-                + os.path.normpath(os.path.join("coverage", data) + ".html'>").replace(
-                    "\\", "/"
-                )
-            )
+            cov_html_path = os.path.normpath(
+                os.path.join("coverage", data + ".html")
+            ).replace("\\", "/")
+            print(cov_html_path)
+            self.out.write(" href" + "='" + cov_html_path + "'>")
         self.append_required = False
         self.file_info = {"href": "", "data": ""}
         self.out.write(html.escape(data))
@@ -59,13 +60,14 @@ class indexHTMLParser(HTMLParser):
 # 各ソースのカバレッジデータhtmlをパースするためのクラスを定義
 class coverageHTMLParser(HTMLParser):
     def __init__(
-        self, css_path: str, out: TextIOWrapper, *, convert_charrefs: bool = True
+        self, css_path: str, out: TextIOWrapper,
+        *, convert_charrefs: bool = True
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.out = out
         self.css_path = css_path
 
-    def handle_starttag(self, tag, attrs):
+    def handle_starttag(self, tag: str, attrs) -> None:
         # print("Start tag:", tag)
         if tag == "link":
             self.out.write("<" + tag)
@@ -83,15 +85,18 @@ class coverageHTMLParser(HTMLParser):
                 self.out.write(" " + attr[0] + "='" + attr[1] + "'")
             self.out.write(">")
 
-    def handle_endtag(self, tag):
+    def handle_endtag(self, tag: str) -> None:
         # print("End tag  :", tag)
         self.out.write("</" + tag + ">")
 
-    def handle_data(self, data):
+    def handle_data(self, data: str) -> None:
         self.out.write(html.escape(data))
 
 
-def copy_coverage_html(src_path: str, dst_path: str, output_style_css_path: str):
+def copy_coverage_html(
+    src_path: str, dst_path: str,
+    output_style_css_path: str
+) -> None:
     if os.path.exists(src_path):
         dst_dir = os.path.dirname(dst_path)
         if not os.path.exists(dst_dir):
@@ -116,9 +121,7 @@ def copy_coverage_html(src_path: str, dst_path: str, output_style_css_path: str)
             cov_parser.close()
 
 
-def darumaotoshi(input_index_html: str, output_dir: str):
-    html_str = ""
-
+def darumaotoshi(input_index_html: str, output_dir: str) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
@@ -161,12 +164,9 @@ def darumaotoshi(input_index_html: str, output_dir: str):
         src_path = os.path.normpath(
             (os.path.join(input_dir, file_info["href"])).replace("\\", "/")
         )
+        cov_html = os.path.join("coverage", file_info["data"] + ".html")
         dst_path = os.path.normpath(
-            (
-                os.path.join(
-                    output_dir, os.path.join("coverage", file_info["data"] + ".html")
-                )
-            ).replace("\\", "/")
+            (os.path.join(output_dir, cov_html)).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
         copy_coverage_html(src_path, dst_path, output_style_css_path)
