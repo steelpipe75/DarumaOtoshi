@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 from html.parser import HTMLParser
+from bs4 import BeautifulSoup
 from io import TextIOWrapper
 
 
@@ -150,6 +151,8 @@ def darumaotoshi(input_index_html: str, output_dir: str) -> None:
         with open(input_index_html, "r", encoding="utf-8") as inputfile:
             html_str = inputfile.read()
             # print(html_str)
+            soup = BeautifulSoup(html_str, 'html.parser')
+            print(soup.prettify())
 
         outputfile.write("<!doctype html>")
 
