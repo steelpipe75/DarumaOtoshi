@@ -103,7 +103,8 @@ class coverageHTMLParser(HTMLParser):
 
 def copy_coverage_html(
     src_path: str, dst_path: str,
-    output_style_css_path: str
+    output_style_css_path: str,
+    pretty_print
 ) -> None:
     if os.path.exists(src_path):
         dst_dir = os.path.dirname(dst_path)
@@ -127,11 +128,14 @@ def copy_coverage_html(
             cov_parser = coverageHTMLParser(css_path)
             cov_parser.feed(src_html)
             outputstr = cov_parser.get_outputstr()
+            if pretty_print:
+                soup = BeautifulSoup(outputstr, 'html.parser')
+                outputstr = soup.prettify()
             dst_file.write(outputstr)
             cov_parser.close()
 
 
-def darumaotoshi(input_index_html: str, output_dir: str) -> None:
+def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
@@ -162,8 +166,8 @@ def darumaotoshi(input_index_html: str, output_dir: str) -> None:
         with open(input_index_html, "r", encoding="utf-8") as inputfile:
             html_str = inputfile.read()
             # print(html_str)
-            soup = BeautifulSoup(html_str, 'html.parser')
-            print(soup.prettify())
+            # soup = BeautifulSoup(html_str, 'html.parser')
+            # print(soup.prettify())
 
         outputfile.write("<!doctype html>")
 
@@ -171,6 +175,9 @@ def darumaotoshi(input_index_html: str, output_dir: str) -> None:
         parser = indexHTMLParser()
         parser.feed(html_str)
         outputstr = parser.get_outputstr()
+        if pretty_print:
+            soup = BeautifulSoup(outputstr, 'html.parser')
+            outputstr = soup.prettify()
         outputfile.write(outputstr)
         parser.close()
 
@@ -185,8 +192,8 @@ def darumaotoshi(input_index_html: str, output_dir: str) -> None:
             (os.path.join(output_dir, cov_html)).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
-        copy_coverage_html(src_path, dst_path, output_style_css_path)
+        copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print)
 
 
 if __name__ == "__main__":
-    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/")
+    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True)
