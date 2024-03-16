@@ -173,3 +173,7 @@ def darumaotoshi(input_index_html: str, output_dir: str) -> None:
         )
         print("### " + src_path + " -> " + dst_path)
         copy_coverage_html(src_path, dst_path, output_style_css_path)
+
+
+if __name__ == "__main__":
+    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/")
