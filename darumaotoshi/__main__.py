@@ -16,7 +16,7 @@ def arg_parse():
         "-i",
         "--input",
         dest="input_file",
-        default="tests/bowling_game_cli/index.html",
+        default="tests/data/c_cmake/bowling_game_cli/index.html",
         help="input HTML file",
     )
 
