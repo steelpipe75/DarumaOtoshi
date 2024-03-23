@@ -18,5 +18,12 @@ python -m darumaotoshi -i ./data/cxx_cmake/bowling_game_cli/index.html -o ./work
 
 echo --- diff ---
 diff -r GoldenFile/ work/
+if [ $? -eq 0 ]; then
+    exit_code=0
+else
+    exit_code=1
+fi
 
 popd
+
+exit "$exit_code"
