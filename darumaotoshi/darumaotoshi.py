@@ -3,6 +3,8 @@ import os
 import re
 import shutil
 import logging
+import zlib
+import numpy as np
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
 from io import TextIOWrapper
@@ -106,7 +108,7 @@ class coverageHTMLParser(HTMLParser):
 def copy_coverage_html(
     src_path: str, dst_path: str,
     output_style_css_path: str,
-    pretty_print
+    pretty_print: bool
 ) -> None:
     if os.path.exists(src_path):
         dst_dir = os.path.dirname(dst_path)
@@ -136,7 +138,7 @@ def copy_coverage_html(
             cov_parser.close()
 
 
-def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> None:
+def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, flat=False) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
@@ -184,7 +186,18 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
         src_path = os.path.normpath(
             (os.path.join(input_dir, file_info["href"])).replace("\\", "/")
         )
-        cov_html = os.path.join("coverage", file_info["data"] + ".html")
+        if flat:
+            dst_dir = os.path.dirname(file_info["data"])
+            logging.debug(f"dst_dir = {dst_dir}")
+            dst_dir_crc32 = np.uint32(zlib.crc32(dst_dir.encode()))
+            logging.debug(f"dst_dir_crc32 = {dst_dir_crc32}")
+            dst_dir_hex = format(dst_dir_crc32,"08X")
+            logging.debug(f"dst_dir_hex = {dst_dir_hex}")
+            dst_file = os.path.basename(file_info["data"])
+            logging.debug(f"dst_file = {dst_file}")
+            cov_html = "_d_" + dst_dir_hex + "_" + dst_file + ".html"
+        else:
+            cov_html = os.path.join("coverage", file_info["data"] + ".html")
         dst_path = os.path.normpath(
             (os.path.join(output_dir, cov_html)).replace("\\", "/")
         )
@@ -194,4 +207,4 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True)
+    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True)
