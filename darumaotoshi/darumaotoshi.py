@@ -110,7 +110,6 @@ def copy_coverage_html(
         dst_dir = os.path.dirname(dst_path)
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
-        # shutil.copy(src_path, dst_path)
 
         relative_path = os.path.normpath(
             os.path.relpath(output_style_css_path, dst_dir)
@@ -166,8 +165,6 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
         with open(input_index_html, "r", encoding="utf-8") as inputfile:
             html_str = inputfile.read()
             # print(html_str)
-            # soup = BeautifulSoup(html_str, 'html.parser')
-            # print(soup.prettify())
 
         outputfile.write("<!doctype html>")
 
