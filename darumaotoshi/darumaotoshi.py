@@ -4,7 +4,7 @@ import re
 import shutil
 import logging
 import zlib
-import numpy as np
+import ctypes
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
 from io import TextIOWrapper
@@ -112,9 +112,9 @@ def flat_convert(orig_dst_path: str) -> str:
     logging.debug(f"orig_dst_path = {orig_dst_path}")
     dst_dir = os.path.dirname(orig_dst_path)
     logging.debug(f"dst_dir = {dst_dir}")
-    dst_dir_crc32 = np.uint32(zlib.crc32(dst_dir.encode()))
+    dst_dir_crc32 = ctypes.c_uint32(zlib.crc32(dst_dir.encode()))
     logging.debug(f"dst_dir_crc32 = {dst_dir_crc32}")
-    dst_dir_hex = format(dst_dir_crc32,"08X")
+    dst_dir_hex = hex(dst_dir_crc32.value & 0xFFFFFFFF)[2:].zfill(8).upper()
     logging.debug(f"dst_dir_hex = {dst_dir_hex}")
     dst_file = os.path.basename(orig_dst_path)
     logging.debug(f"dst_file = {dst_file}")
