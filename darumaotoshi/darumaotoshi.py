@@ -17,7 +17,7 @@ class indexHTMLParser(HTMLParser):
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.__files = []
-        self.__file_info = {"href": "", "data": ""}
+        self.__file_info = {"href": "", "cov_html_path": ""}
         self.__append_required = False
         self.__outputstr = ""
         self.__flat = flat
@@ -49,17 +49,17 @@ class indexHTMLParser(HTMLParser):
     def handle_data(self, data: str) -> None:
         logging.debug(f"Data     :{data}")
         if self.__append_required:
-            self.__file_info["data"] = data
-            self.__files.append(self.__file_info)
             cov_html_path = os.path.normpath(
                 os.path.join("coverage", data)
             ).replace("\\", "/")
-            logging.debug(f"cov_html_path = {cov_html_path}")
             if self.__flat:
                 cov_html_path = flat_convert(cov_html_path)
+            self.__file_info["cov_html_path"] = cov_html_path
+            logging.debug(f"cov_html_path = {cov_html_path}")
+            self.__files.append(self.__file_info)
             self.__outputstr += (" href" + "='" + cov_html_path + ".html'>")
         self.__append_required = False
-        self.__file_info = {"href": "", "data": ""}
+        self.__file_info = {"href": "", "cov_html_path": ""}
         self.__outputstr += (html.escape(data))
 
     def get_files(self) -> str:
@@ -203,11 +203,9 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
         src_path = os.path.normpath(
             (os.path.join(input_dir, file_info["href"])).replace("\\", "/")
         )
-        cov_html = os.path.join("coverage", file_info["data"])
-        if flat:
-            cov_html = flat_convert(cov_html)
+        cov_html_path = file_info["cov_html_path"]
         dst_path = os.path.normpath(
-            (os.path.join(output_dir, cov_html + ".html")).replace("\\", "/")
+            (os.path.join(output_dir, cov_html_path + ".html")).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
         copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print)
