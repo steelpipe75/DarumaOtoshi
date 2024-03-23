@@ -4,8 +4,8 @@ from darumaotoshi import darumaotoshi
 
 
 def main():
-    input_index_html, output_dir, pretty_print = arg_parse()
-    darumaotoshi(input_index_html, output_dir, pretty_print)
+    input_index_html, output_dir, pretty_print, flat = arg_parse()
+    darumaotoshi(input_index_html, output_dir, pretty_print, flat)
 
 
 def arg_parse():
@@ -29,12 +29,18 @@ def arg_parse():
         help="output directory"
     )
 
-    # 出力ディレクトリを指定するオプションを追加
     parser.add_argument(
         "-p",
         "--pretty_print",
         action="store_true",
-        help="Pretty Print"
+        help="pretty print"
+    )
+
+    parser.add_argument(
+        "-f",
+        "--flat",
+        action="store_true",
+        help="flat"
     )
 
     # コマンドライン引数のパース
@@ -43,9 +49,10 @@ def arg_parse():
     print(f"Processing HTML file: {args.input_file}")
     print(f"Output directory: {args.output_dir}")
     print(f"Pretty Print: {args.pretty_print}")
+    print(f"Flat: {args.flat}")
 
     # パースされた引数を使って処理を行う
-    return args.input_file, args.output_dir , args.pretty_print
+    return args.input_file, args.output_dir, args.pretty_print, args.flat
 
 
 if __name__ == "__main__":
