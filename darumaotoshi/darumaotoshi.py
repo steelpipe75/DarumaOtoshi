@@ -13,13 +13,14 @@ from io import TextIOWrapper
 # index.htmlをパースするためのクラスを定義
 class indexHTMLParser(HTMLParser):
     def __init__(
-        self, *, convert_charrefs: bool = True
+        self, flat: bool = False, *, convert_charrefs: bool = True
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.__files = []
         self.__file_info = {"href": "", "data": ""}
         self.__append_required = False
         self.__outputstr = ""
+        self.__flat = flat
 
     def handle_starttag(self, tag: str, attrs) -> None:
         logging.debug(f"Start tag:{tag}")
@@ -51,10 +52,12 @@ class indexHTMLParser(HTMLParser):
             self.__file_info["data"] = data
             self.__files.append(self.__file_info)
             cov_html_path = os.path.normpath(
-                os.path.join("coverage", data + ".html")
+                os.path.join("coverage", data)
             ).replace("\\", "/")
             logging.debug(f"cov_html_path = {cov_html_path}")
-            self.__outputstr += (" href" + "='" + cov_html_path + "'>")
+            if self.__flat:
+                cov_html_path = flat_convert(cov_html_path)
+            self.__outputstr += (" href" + "='" + cov_html_path + ".html'>")
         self.__append_required = False
         self.__file_info = {"href": "", "data": ""}
         self.__outputstr += (html.escape(data))
@@ -103,6 +106,20 @@ class coverageHTMLParser(HTMLParser):
 
     def get_outputstr(self) -> str:
         return self.__outputstr
+
+
+def flat_convert(orig_dst_path: str) -> str:
+    print(f"orig_dst_path = {orig_dst_path}")
+    logging.debug(f"orig_dst_path = {orig_dst_path}")
+    dst_dir = os.path.dirname(orig_dst_path)
+    logging.debug(f"dst_dir = {dst_dir}")
+    dst_dir_crc32 = np.uint32(zlib.crc32(dst_dir.encode()))
+    logging.debug(f"dst_dir_crc32 = {dst_dir_crc32}")
+    dst_dir_hex = format(dst_dir_crc32,"08X")
+    logging.debug(f"dst_dir_hex = {dst_dir_hex}")
+    dst_file = os.path.basename(orig_dst_path)
+    logging.debug(f"dst_file = {dst_file}")
+    return "_d_" + dst_dir_hex + "_" + dst_file
 
 
 def copy_coverage_html(
@@ -171,7 +188,7 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
         outputfile.write("<!doctype html>")
 
         # HTMLをパース
-        parser = indexHTMLParser()
+        parser = indexHTMLParser(flat)
         parser.feed(html_str)
         outputstr = parser.get_outputstr()
         if pretty_print:
@@ -186,25 +203,16 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
         src_path = os.path.normpath(
             (os.path.join(input_dir, file_info["href"])).replace("\\", "/")
         )
+        cov_html = os.path.join("coverage", file_info["data"])
         if flat:
-            dst_dir = os.path.dirname(file_info["data"])
-            logging.debug(f"dst_dir = {dst_dir}")
-            dst_dir_crc32 = np.uint32(zlib.crc32(dst_dir.encode()))
-            logging.debug(f"dst_dir_crc32 = {dst_dir_crc32}")
-            dst_dir_hex = format(dst_dir_crc32,"08X")
-            logging.debug(f"dst_dir_hex = {dst_dir_hex}")
-            dst_file = os.path.basename(file_info["data"])
-            logging.debug(f"dst_file = {dst_file}")
-            cov_html = "_d_" + dst_dir_hex + "_" + dst_file + ".html"
-        else:
-            cov_html = os.path.join("coverage", file_info["data"] + ".html")
+            cov_html = flat_convert(cov_html)
         dst_path = os.path.normpath(
-            (os.path.join(output_dir, cov_html)).replace("\\", "/")
+            (os.path.join(output_dir, cov_html + ".html")).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
         copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print)
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    # logging.basicConfig(level=logging.DEBUG)
     darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True)
