@@ -1,5 +1,8 @@
 #!/bin/bashdata
 
+script_dir="$(dirname "$0")"
+pushd "$script_dir"
+
 echo --- pip install ---
 python -m pip install -e ..
 
@@ -15,3 +18,5 @@ python -m darumaotoshi -i ./data/cxx_cmake/bowling_game_cli/index.html -o ./work
 
 echo --- diff ---
 diff -r GoldenFile/ work/
+
+popd
