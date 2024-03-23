@@ -2,6 +2,7 @@ import html
 import os
 import re
 import shutil
+import logging
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
 from io import TextIOWrapper
@@ -19,7 +20,7 @@ class indexHTMLParser(HTMLParser):
         self.__outputstr = ""
 
     def handle_starttag(self, tag: str, attrs) -> None:
-        print("Start tag:", tag)
+        logging.debug(f"Start tag:{tag}")
         self.__outputstr += ("<" + tag)
         if tag == "a":
             link_target = attrs[0][1]
@@ -29,21 +30,21 @@ class indexHTMLParser(HTMLParser):
                 self.__append_required = True
             else:
                 for attr in attrs:
-                    print("  Attribute:", attr)
+                    logging.debug(f"  Attribute:{attr}")
                     self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
                 self.__outputstr += (">")
         else:
             for attr in attrs:
-                print("  Attribute:", attr)
+                logging.debug(f"  Attribute:{attr}")
                 self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
             self.__outputstr += (">")
 
     def handle_endtag(self, tag: str) -> None:
-        print("End tag  :", tag)
+        logging.debug(f"End tag  :{tag}")
         self.__outputstr += ("</" + tag + ">")
 
     def handle_data(self, data: str) -> None:
-        print("Data     :", data)
+        logging.debug(f"Data     :{data}")
         if self.__append_required:
             self.__file_info["data"] = data
             self.__files.append(self.__file_info)
@@ -73,11 +74,11 @@ class coverageHTMLParser(HTMLParser):
         self.__css_path = css_path
 
     def handle_starttag(self, tag: str, attrs) -> None:
-        print("Start tag:", tag)
+        logging.debug(f"Start tag:{tag}")
         if tag == "link":
             self.__outputstr += ("<" + tag)
             for attr in attrs:
-                print("  Attribute:", attr)
+                logging.debug(f"  Attribute:{attr}")
                 if attr[0] == "href":
                     self.__outputstr += (" " + "href" + "='" + self.__css_path + "'")
                 else:
@@ -86,15 +87,16 @@ class coverageHTMLParser(HTMLParser):
         else:
             self.__outputstr += ("<" + tag)
             for attr in attrs:
-                print("  Attribute:", attr)
+                logging.debug(f"  Attribute:{attr}")
                 self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
             self.__outputstr += (">")
 
     def handle_endtag(self, tag: str) -> None:
-        print("End tag  :", tag)
+        logging.debug(f"End tag  :{tag}")
         self.__outputstr += ("</" + tag + ">")
 
     def handle_data(self, data: str) -> None:
+        logging.debug(f"Data     :{data}")
         self.__outputstr += (html.escape(data))
 
     def get_outputstr(self) -> str:
@@ -115,7 +117,7 @@ def copy_coverage_html(
             os.path.relpath(output_style_css_path, dst_dir)
         )
         css_path = relative_path.replace("\\", "/")
-        print(css_path)
+        logging.debug(f"css_path = {css_path}")
 
         with open(dst_path, "w", encoding="utf-8") as dst_file:
             with open(src_path, "r", encoding="utf-8") as src_file:
@@ -138,7 +140,7 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
-    print(input_dir)
+    logging.debug(f"input_dir = {input_dir}")
 
     os.makedirs(output_dir, exist_ok=True)
     src_path = os.path.normpath(
@@ -155,16 +157,16 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
     output_style_css_path = os.path.normpath(
         (os.path.join(output_dir, "style.css")).replace("\\", "/")
     )
-    print(output_style_css_path)
+    logging.debug(f"output_style_css_path = {output_style_css_path}")
     output_index_html = os.path.normpath(
         (os.path.join(output_dir, "index.html")).replace("\\", "/")
     )
-    print(output_index_html)
+    logging.debug(f"output_index_html = {output_index_html}")
     print("@@@ " + input_index_html + " -> " + output_index_html)
     with open(output_index_html, "w", encoding="utf-8") as outputfile:
         with open(input_index_html, "r", encoding="utf-8") as inputfile:
             html_str = inputfile.read()
-            print(html_str)
+            logging.debug(f"html_str = {html_str}")
 
         outputfile.write("<!doctype html>")
 
@@ -178,7 +180,7 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
         outputfile.write(outputstr)
         parser.close()
 
-    print(parser.get_files())
+    logging.debug(f"parser.get_files() = {parser.get_files()}")
 
     for file_info in parser.get_files():
         src_path = os.path.normpath(
@@ -193,4 +195,5 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True)
