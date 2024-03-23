@@ -51,7 +51,7 @@ class indexHTMLParser(HTMLParser):
             cov_html_path = os.path.normpath(
                 os.path.join("coverage", data + ".html")
             ).replace("\\", "/")
-            print(cov_html_path)
+            logging.debug(f"cov_html_path = {cov_html_path}")
             self.__outputstr += (" href" + "='" + cov_html_path + "'>")
         self.__append_required = False
         self.__file_info = {"href": "", "data": ""}
@@ -150,8 +150,6 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
         (os.path.join(output_dir, "style.css")).replace("\\", "/")
     )
     print("*** " + src_path + " -> " + dst_path)
-    print("src_path = " + src_path)
-    print("dst_path = " + dst_path)
     shutil.copy(src_path, dst_path)
 
     output_style_css_path = os.path.normpath(
