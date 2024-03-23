@@ -3,6 +3,8 @@ import os
 import re
 import shutil
 import logging
+import zlib
+import ctypes
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
 from io import TextIOWrapper
@@ -11,13 +13,14 @@ from io import TextIOWrapper
 # index.htmlをパースするためのクラスを定義
 class indexHTMLParser(HTMLParser):
     def __init__(
-        self, *, convert_charrefs: bool = True
+        self, flat: bool = False, *, convert_charrefs: bool = True
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.__files = []
-        self.__file_info = {"href": "", "data": ""}
+        self.__file_info = {"href": "", "cov_html_path": ""}
         self.__append_required = False
         self.__outputstr = ""
+        self.__flat = flat
 
     def handle_starttag(self, tag: str, attrs) -> None:
         logging.debug(f"Start tag:{tag}")
@@ -46,15 +49,17 @@ class indexHTMLParser(HTMLParser):
     def handle_data(self, data: str) -> None:
         logging.debug(f"Data     :{data}")
         if self.__append_required:
-            self.__file_info["data"] = data
-            self.__files.append(self.__file_info)
             cov_html_path = os.path.normpath(
-                os.path.join("coverage", data + ".html")
+                os.path.join("coverage", data)
             ).replace("\\", "/")
+            if self.__flat:
+                cov_html_path = flat_convert(cov_html_path)
+            self.__file_info["cov_html_path"] = cov_html_path
             logging.debug(f"cov_html_path = {cov_html_path}")
-            self.__outputstr += (" href" + "='" + cov_html_path + "'>")
+            self.__files.append(self.__file_info)
+            self.__outputstr += (" href" + "='" + cov_html_path + ".html'>")
         self.__append_required = False
-        self.__file_info = {"href": "", "data": ""}
+        self.__file_info = {"href": "", "cov_html_path": ""}
         self.__outputstr += (html.escape(data))
 
     def get_files(self) -> str:
@@ -103,10 +108,23 @@ class coverageHTMLParser(HTMLParser):
         return self.__outputstr
 
 
+def flat_convert(orig_dst_path: str) -> str:
+    logging.debug(f"orig_dst_path = {orig_dst_path}")
+    dst_dir = os.path.dirname(orig_dst_path)
+    logging.debug(f"dst_dir = {dst_dir}")
+    dst_dir_crc32 = ctypes.c_uint32(zlib.crc32(dst_dir.encode()))
+    logging.debug(f"dst_dir_crc32 = {dst_dir_crc32}")
+    dst_dir_hex = hex(dst_dir_crc32.value & 0xFFFFFFFF)[2:].zfill(8).upper()
+    logging.debug(f"dst_dir_hex = {dst_dir_hex}")
+    dst_file = os.path.basename(orig_dst_path)
+    logging.debug(f"dst_file = {dst_file}")
+    return "_d_" + dst_dir_hex + "_" + dst_file
+
+
 def copy_coverage_html(
     src_path: str, dst_path: str,
     output_style_css_path: str,
-    pretty_print
+    pretty_print: bool
 ) -> None:
     if os.path.exists(src_path):
         dst_dir = os.path.dirname(dst_path)
@@ -136,7 +154,7 @@ def copy_coverage_html(
             cov_parser.close()
 
 
-def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> None:
+def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, flat=False) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
@@ -169,7 +187,7 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
         outputfile.write("<!doctype html>")
 
         # HTMLをパース
-        parser = indexHTMLParser()
+        parser = indexHTMLParser(flat)
         parser.feed(html_str)
         outputstr = parser.get_outputstr()
         if pretty_print:
@@ -184,9 +202,9 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
         src_path = os.path.normpath(
             (os.path.join(input_dir, file_info["href"])).replace("\\", "/")
         )
-        cov_html = os.path.join("coverage", file_info["data"] + ".html")
+        cov_html_path = file_info["cov_html_path"]
         dst_path = os.path.normpath(
-            (os.path.join(output_dir, cov_html)).replace("\\", "/")
+            (os.path.join(output_dir, cov_html_path + ".html")).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
         copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print)
@@ -194,4 +212,4 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False) -> 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True)
+    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True)
