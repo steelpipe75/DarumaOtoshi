@@ -32,9 +32,8 @@ def arg_parse():
     # 出力ディレクトリを指定するオプションを追加
     parser.add_argument(
         "-p",
-        "--prettyprint",
-        dest="pretty_print",
-        default="false",
+        "--pretty_print",
+        action="store_true",
         help="Pretty Print"
     )
 
