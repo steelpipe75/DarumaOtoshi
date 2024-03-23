@@ -109,7 +109,6 @@ class coverageHTMLParser(HTMLParser):
 
 
 def flat_convert(orig_dst_path: str) -> str:
-    print(f"orig_dst_path = {orig_dst_path}")
     logging.debug(f"orig_dst_path = {orig_dst_path}")
     dst_dir = os.path.dirname(orig_dst_path)
     logging.debug(f"dst_dir = {dst_dir}")
@@ -212,5 +211,5 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
 
 
 if __name__ == "__main__":
-    # logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG)
     darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True)
