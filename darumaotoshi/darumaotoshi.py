@@ -7,7 +7,6 @@ import zlib
 import ctypes
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
-from io import TextIOWrapper
 
 
 # index.htmlをパースするためのクラスを定義
