@@ -13,19 +13,25 @@ from io import TextIOWrapper
 # index.htmlをパースするためのクラスを定義
 class indexHTMLParser(HTMLParser):
     def __init__(
-        self, flat: bool = False, *, convert_charrefs: bool = True
+        self,
+        src_css_path: str,
+        flat: bool = False,
+        embedded_css: bool = False,
+        *, convert_charrefs: bool = True
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.__files = []
         self.__file_info = {"href": "", "cov_html_path": ""}
         self.__append_required = False
         self.__outputstr = ""
+        self.__src_css_path = src_css_path
         self.__flat = flat
+        self.__embedded_css = embedded_css
 
     def handle_starttag(self, tag: str, attrs) -> None:
         logging.debug(f"Start tag:{tag}")
-        self.__outputstr += ("<" + tag)
         if tag == "a":
+            self.__outputstr += ("<" + tag)
             link_target = attrs[0][1]
             pattern = r"^coverage/"
             if re.search(pattern, link_target):
@@ -37,10 +43,17 @@ class indexHTMLParser(HTMLParser):
                     self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
                 self.__outputstr += (">")
         else:
-            for attr in attrs:
-                logging.debug(f"  Attribute:{attr}")
-                self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-            self.__outputstr += (">")
+            need_write = True
+            if self.__embedded_css:
+                if tag == "link":
+                    addstr, need_write = expand_css(attrs, self.__src_css_path)
+                    self.__outputstr += addstr
+            if need_write:
+                self.__outputstr += ("<" + tag)
+                for attr in attrs:
+                    logging.debug(f"  Attribute:{attr}")
+                    self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
+                self.__outputstr += (">")
 
     def handle_endtag(self, tag: str) -> None:
         logging.debug(f"End tag  :{tag}")
@@ -72,23 +85,32 @@ class indexHTMLParser(HTMLParser):
 # 各ソースのカバレッジデータhtmlをパースするためのクラスを定義
 class coverageHTMLParser(HTMLParser):
     def __init__(
-        self, css_path: str, *, convert_charrefs: bool = True
+        self,
+        css_path: str,
+        embedded_css: bool = False,
+        *, convert_charrefs: bool = True
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.__outputstr = ""
         self.__css_path = css_path
+        self.__embedded_css = embedded_css
 
     def handle_starttag(self, tag: str, attrs) -> None:
         logging.debug(f"Start tag:{tag}")
         if tag == "link":
-            self.__outputstr += ("<" + tag)
-            for attr in attrs:
-                logging.debug(f"  Attribute:{attr}")
-                if attr[0] == "href":
-                    self.__outputstr += (" " + "href" + "='" + self.__css_path + "'")
-                else:
-                    self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-            self.__outputstr += (">")
+            need_write = True
+            if self.__embedded_css:
+                addstr, need_write = expand_css(attrs, self.__css_path)
+                self.__outputstr += addstr
+            if need_write:
+                self.__outputstr += ("<" + tag)
+                for attr in attrs:
+                    logging.debug(f"  Attribute:{attr}")
+                    if attr[0] == "href":
+                        self.__outputstr += (" " + "href" + "='" + self.__css_path + "'")
+                    else:
+                        self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
+                self.__outputstr += (">")
         else:
             self.__outputstr += ("<" + tag)
             for attr in attrs:
@@ -121,20 +143,38 @@ def flat_convert(orig_dst_path: str) -> str:
     return "_d_" + dst_dir_hex + "_" + dst_file
 
 
+def expand_css(attrs, css_path):
+    need_expand = False
+    if (('rel', 'stylesheet') in attrs
+        and ('type', 'text/css') in attrs):
+        need_expand = True
+
+    if need_expand:
+        with open(css_path, "r", encoding="utf-8") as css_file:
+            contents = css_file.read()
+        return "<style>" + contents + "</style>", False
+    else:
+        return "", True
+
+
 def copy_coverage_html(
     src_path: str, dst_path: str,
     output_style_css_path: str,
-    pretty_print: bool
+    pretty_print: bool,
+    embedded_css: bool
 ) -> None:
     if os.path.exists(src_path):
         dst_dir = os.path.dirname(dst_path)
         if not os.path.exists(dst_dir):
             os.makedirs(dst_dir)
 
-        relative_path = os.path.normpath(
-            os.path.relpath(output_style_css_path, dst_dir)
-        )
-        css_path = relative_path.replace("\\", "/")
+        if embedded_css:
+            css_path = output_style_css_path
+        else:
+            relative_path = os.path.normpath(
+                os.path.relpath(output_style_css_path, dst_dir)
+            )
+            css_path = relative_path.replace("\\", "/")
         logging.debug(f"css_path = {css_path}")
 
         with open(dst_path, "w", encoding="utf-8") as dst_file:
@@ -144,7 +184,7 @@ def copy_coverage_html(
             dst_file.write("<!doctype html>")
 
             # HTMLをパース
-            cov_parser = coverageHTMLParser(css_path)
+            cov_parser = coverageHTMLParser(css_path, embedded_css)
             cov_parser.feed(src_html)
             outputstr = cov_parser.get_outputstr()
             if pretty_print:
@@ -154,25 +194,27 @@ def copy_coverage_html(
             cov_parser.close()
 
 
-def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, flat=False) -> None:
+def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, flat=False, embedded_css=False) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
     logging.debug(f"input_dir = {input_dir}")
 
     os.makedirs(output_dir, exist_ok=True)
-    src_path = os.path.normpath(
+    src_css_path = os.path.normpath(
         (os.path.join(input_dir, "style.css")).replace("\\", "/")
     )
-    dst_path = os.path.normpath(
-        (os.path.join(output_dir, "style.css")).replace("\\", "/")
-    )
-    print("*** " + src_path + " -> " + dst_path)
-    shutil.copy(src_path, dst_path)
-
-    output_style_css_path = os.path.normpath(
-        (os.path.join(output_dir, "style.css")).replace("\\", "/")
-    )
+    if embedded_css:
+        output_style_css_path = src_css_path
+    else:
+        dst_css_path = os.path.normpath(
+            (os.path.join(output_dir, "style.css")).replace("\\", "/")
+        )
+        print("*** " + src_css_path + " -> " + dst_css_path)
+        shutil.copy(src_css_path, dst_css_path)
+        output_style_css_path = os.path.normpath(
+            (os.path.join(output_dir, "style.css")).replace("\\", "/")
+        )
     logging.debug(f"output_style_css_path = {output_style_css_path}")
     output_index_html = os.path.normpath(
         (os.path.join(output_dir, "index.html")).replace("\\", "/")
@@ -187,7 +229,7 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
         outputfile.write("<!doctype html>")
 
         # HTMLをパース
-        parser = indexHTMLParser(flat)
+        parser = indexHTMLParser(src_css_path, flat, embedded_css)
         parser.feed(html_str)
         outputstr = parser.get_outputstr()
         if pretty_print:
@@ -207,9 +249,9 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
             (os.path.join(output_dir, cov_html_path + ".html")).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
-        copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print)
+        copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print, embedded_css)
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True)
+    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True, True)
