@@ -199,6 +199,7 @@ def copy_coverage_html(
 def darumaotoshi(
     input_index_html: str,
     output_dir: str,
+    *,
     pretty_print=False,
     flat=False,
     embedded_css=False
@@ -272,7 +273,7 @@ if __name__ == "__main__":
     darumaotoshi(
         "tests/data/c_cmake/bowling_game_cli/index.html",
         "output/",
-        True,
-        True,
-        True
+        pretty_print=True,
+        flat=True,
+        embedded_css=True,
     )

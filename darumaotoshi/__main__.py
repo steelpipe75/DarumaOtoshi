@@ -8,9 +8,9 @@ def main():
     darumaotoshi(
         dict_args["input_file"],
         dict_args["output_dir"],
-        dict_args["pretty_print"],
-        dict_args["flat"],
-        dict_args["embedded_css"]
+        pretty_print=dict_args["pretty_print"],
+        flat=dict_args["flat"],
+        embedded_css=dict_args["embedded_css"]
     )
 
 
