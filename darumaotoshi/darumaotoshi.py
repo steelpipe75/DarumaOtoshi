@@ -7,7 +7,6 @@ import zlib
 import ctypes
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
-from io import TextIOWrapper
 
 
 # index.htmlをパースするためのクラスを定義
@@ -31,7 +30,7 @@ class indexHTMLParser(HTMLParser):
     def handle_starttag(self, tag: str, attrs) -> None:
         logging.debug(f"Start tag:{tag}")
         if tag == "a":
-            self.__outputstr += ("<" + tag)
+            self.__outputstr += "<" + tag
             link_target = attrs[0][1]
             pattern = r"^coverage/"
             if re.search(pattern, link_target):
@@ -40,8 +39,8 @@ class indexHTMLParser(HTMLParser):
             else:
                 for attr in attrs:
                     logging.debug(f"  Attribute:{attr}")
-                    self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-                self.__outputstr += (">")
+                    self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+                self.__outputstr += ">"
         else:
             need_write = True
             if self.__embedded_css:
@@ -49,15 +48,15 @@ class indexHTMLParser(HTMLParser):
                     addstr, need_write = expand_css(attrs, self.__src_css_path)
                     self.__outputstr += addstr
             if need_write:
-                self.__outputstr += ("<" + tag)
+                self.__outputstr += "<" + tag
                 for attr in attrs:
                     logging.debug(f"  Attribute:{attr}")
-                    self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-                self.__outputstr += (">")
+                    self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+                self.__outputstr += ">"
 
     def handle_endtag(self, tag: str) -> None:
         logging.debug(f"End tag  :{tag}")
-        self.__outputstr += ("</" + tag + ">")
+        self.__outputstr += "</" + tag + ">"
 
     def handle_data(self, data: str) -> None:
         logging.debug(f"Data     :{data}")
@@ -70,10 +69,10 @@ class indexHTMLParser(HTMLParser):
             self.__file_info["cov_html_path"] = cov_html_path
             logging.debug(f"cov_html_path = {cov_html_path}")
             self.__files.append(self.__file_info)
-            self.__outputstr += (" href" + "='" + cov_html_path + ".html'>")
+            self.__outputstr += " href" + "='" + cov_html_path + ".html'>"
         self.__append_required = False
         self.__file_info = {"href": "", "cov_html_path": ""}
-        self.__outputstr += (html.escape(data))
+        self.__outputstr += html.escape(data)
 
     def get_files(self) -> str:
         return self.__files
@@ -103,28 +102,30 @@ class coverageHTMLParser(HTMLParser):
                 addstr, need_write = expand_css(attrs, self.__css_path)
                 self.__outputstr += addstr
             if need_write:
-                self.__outputstr += ("<" + tag)
+                self.__outputstr += "<" + tag
                 for attr in attrs:
                     logging.debug(f"  Attribute:{attr}")
                     if attr[0] == "href":
-                        self.__outputstr += (" " + "href" + "='" + self.__css_path + "'")
+                        self.__outputstr += " " + "href" + "='"
+                        self.__outputstr += self.__css_path + "'"
                     else:
-                        self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-                self.__outputstr += (">")
+                        self.__outputstr += " " + attr[0] + "='"
+                        self.__outputstr += attr[1] + "'"
+                self.__outputstr += ">"
         else:
-            self.__outputstr += ("<" + tag)
+            self.__outputstr += "<" + tag
             for attr in attrs:
                 logging.debug(f"  Attribute:{attr}")
-                self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-            self.__outputstr += (">")
+                self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+            self.__outputstr += ">"
 
     def handle_endtag(self, tag: str) -> None:
         logging.debug(f"End tag  :{tag}")
-        self.__outputstr += ("</" + tag + ">")
+        self.__outputstr += "</" + tag + ">"
 
     def handle_data(self, data: str) -> None:
         logging.debug(f"Data     :{data}")
-        self.__outputstr += (html.escape(data))
+        self.__outputstr += html.escape(data)
 
     def get_outputstr(self) -> str:
         return self.__outputstr
@@ -146,7 +147,7 @@ def flat_convert(orig_dst_path: str) -> str:
 def expand_css(attrs, css_path):
     need_expand = False
     if (('rel', 'stylesheet') in attrs
-        and ('type', 'text/css') in attrs):
+            and ('type', 'text/css') in attrs):
         need_expand = True
 
     if need_expand:
@@ -158,7 +159,8 @@ def expand_css(attrs, css_path):
 
 
 def copy_coverage_html(
-    src_path: str, dst_path: str,
+    src_path: str,
+    dst_path: str,
     output_style_css_path: str,
     pretty_print: bool,
     embedded_css: bool
@@ -194,7 +196,14 @@ def copy_coverage_html(
             cov_parser.close()
 
 
-def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, flat=False, embedded_css=False) -> None:
+def darumaotoshi(
+    input_index_html: str,
+    output_dir: str,
+    *,
+    pretty_print=False,
+    flat=False,
+    embedded_css=False
+) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
@@ -246,12 +255,25 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
         )
         cov_html_path = file_info["cov_html_path"]
         dst_path = os.path.normpath(
-            (os.path.join(output_dir, cov_html_path + ".html")).replace("\\", "/")
+            (
+                os.path.join(output_dir, cov_html_path + ".html")
+            ).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
-        copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print, embedded_css)
+        copy_coverage_html(
+            src_path, dst_path,
+            output_style_css_path,
+            pretty_print,
+            embedded_css
+        )
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True, True)
+    darumaotoshi(
+        "tests/data/c_cmake/bowling_game_cli/index.html",
+        "output/",
+        pretty_print=True,
+        flat=True,
+        embedded_css=True,
+    )
