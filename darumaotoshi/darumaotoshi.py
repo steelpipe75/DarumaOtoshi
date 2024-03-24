@@ -31,7 +31,7 @@ class indexHTMLParser(HTMLParser):
     def handle_starttag(self, tag: str, attrs) -> None:
         logging.debug(f"Start tag:{tag}")
         if tag == "a":
-            self.__outputstr += ("<" + tag)
+            self.__outputstr += "<" + tag
             link_target = attrs[0][1]
             pattern = r"^coverage/"
             if re.search(pattern, link_target):
@@ -40,8 +40,8 @@ class indexHTMLParser(HTMLParser):
             else:
                 for attr in attrs:
                     logging.debug(f"  Attribute:{attr}")
-                    self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-                self.__outputstr += (">")
+                    self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+                self.__outputstr += ">"
         else:
             need_write = True
             if self.__embedded_css:
@@ -49,15 +49,15 @@ class indexHTMLParser(HTMLParser):
                     addstr, need_write = expand_css(attrs, self.__src_css_path)
                     self.__outputstr += addstr
             if need_write:
-                self.__outputstr += ("<" + tag)
+                self.__outputstr += "<" + tag
                 for attr in attrs:
                     logging.debug(f"  Attribute:{attr}")
-                    self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-                self.__outputstr += (">")
+                    self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+                self.__outputstr += ">"
 
     def handle_endtag(self, tag: str) -> None:
         logging.debug(f"End tag  :{tag}")
-        self.__outputstr += ("</" + tag + ">")
+        self.__outputstr += "</" + tag + ">"
 
     def handle_data(self, data: str) -> None:
         logging.debug(f"Data     :{data}")
@@ -70,10 +70,10 @@ class indexHTMLParser(HTMLParser):
             self.__file_info["cov_html_path"] = cov_html_path
             logging.debug(f"cov_html_path = {cov_html_path}")
             self.__files.append(self.__file_info)
-            self.__outputstr += (" href" + "='" + cov_html_path + ".html'>")
+            self.__outputstr += " href" + "='" + cov_html_path + ".html'>"
         self.__append_required = False
         self.__file_info = {"href": "", "cov_html_path": ""}
-        self.__outputstr += (html.escape(data))
+        self.__outputstr += html.escape(data)
 
     def get_files(self) -> str:
         return self.__files
@@ -103,28 +103,28 @@ class coverageHTMLParser(HTMLParser):
                 addstr, need_write = expand_css(attrs, self.__css_path)
                 self.__outputstr += addstr
             if need_write:
-                self.__outputstr += ("<" + tag)
+                self.__outputstr += "<" + tag
                 for attr in attrs:
                     logging.debug(f"  Attribute:{attr}")
                     if attr[0] == "href":
-                        self.__outputstr += (" " + "href" + "='" + self.__css_path + "'")
+                        self.__outputstr += " " + "href" + "='" + self.__css_path + "'"
                     else:
-                        self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-                self.__outputstr += (">")
+                        self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+                self.__outputstr += ">"
         else:
-            self.__outputstr += ("<" + tag)
+            self.__outputstr += "<" + tag
             for attr in attrs:
                 logging.debug(f"  Attribute:{attr}")
-                self.__outputstr += (" " + attr[0] + "='" + attr[1] + "'")
-            self.__outputstr += (">")
+                self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+            self.__outputstr += ">"
 
     def handle_endtag(self, tag: str) -> None:
         logging.debug(f"End tag  :{tag}")
-        self.__outputstr += ("</" + tag + ">")
+        self.__outputstr += "</" + tag + ">"
 
     def handle_data(self, data: str) -> None:
         logging.debug(f"Data     :{data}")
-        self.__outputstr += (html.escape(data))
+        self.__outputstr += html.escape(data)
 
     def get_outputstr(self) -> str:
         return self.__outputstr
