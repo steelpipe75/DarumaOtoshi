@@ -106,9 +106,11 @@ class coverageHTMLParser(HTMLParser):
                 for attr in attrs:
                     logging.debug(f"  Attribute:{attr}")
                     if attr[0] == "href":
-                        self.__outputstr += " " + "href" + "='" + self.__css_path + "'"
+                        self.__outputstr += " " + "href" + "='"
+                        self.__outputstr += self.__css_path + "'"
                     else:
-                        self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
+                        self.__outputstr += " " + attr[0] + "='"
+                        self.__outputstr += attr[1] + "'"
                 self.__outputstr += ">"
         else:
             self.__outputstr += "<" + tag
@@ -145,7 +147,7 @@ def flat_convert(orig_dst_path: str) -> str:
 def expand_css(attrs, css_path):
     need_expand = False
     if (('rel', 'stylesheet') in attrs
-        and ('type', 'text/css') in attrs):
+            and ('type', 'text/css') in attrs):
         need_expand = True
 
     if need_expand:
@@ -157,7 +159,8 @@ def expand_css(attrs, css_path):
 
 
 def copy_coverage_html(
-    src_path: str, dst_path: str,
+    src_path: str,
+    dst_path: str,
     output_style_css_path: str,
     pretty_print: bool,
     embedded_css: bool
@@ -193,7 +196,13 @@ def copy_coverage_html(
             cov_parser.close()
 
 
-def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, flat=False, embedded_css=False) -> None:
+def darumaotoshi(
+    input_index_html: str,
+    output_dir: str,
+    pretty_print=False,
+    flat=False,
+    embedded_css=False
+) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
@@ -245,12 +254,25 @@ def darumaotoshi(input_index_html: str, output_dir: str, pretty_print=False, fla
         )
         cov_html_path = file_info["cov_html_path"]
         dst_path = os.path.normpath(
-            (os.path.join(output_dir, cov_html_path + ".html")).replace("\\", "/")
+            (
+                os.path.join(output_dir, cov_html_path + ".html")
+            ).replace("\\", "/")
         )
         print("### " + src_path + " -> " + dst_path)
-        copy_coverage_html(src_path, dst_path, output_style_css_path, pretty_print, embedded_css)
+        copy_coverage_html(
+            src_path, dst_path,
+            output_style_css_path,
+            pretty_print,
+            embedded_css
+        )
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
-    darumaotoshi("tests/data/c_cmake/bowling_game_cli/index.html", "output/", True, True, True)
+    darumaotoshi(
+        "tests/data/c_cmake/bowling_game_cli/index.html",
+        "output/",
+        True,
+        True,
+        True
+    )
