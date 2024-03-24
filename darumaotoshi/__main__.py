@@ -4,8 +4,8 @@ from darumaotoshi import darumaotoshi
 
 
 def main():
-    input_index_html, output_dir, pretty_print, flat = arg_parse()
-    darumaotoshi(input_index_html, output_dir, pretty_print, flat)
+    input_index_html, output_dir, pretty_print, flat, embedded_css = arg_parse()
+    darumaotoshi(input_index_html, output_dir, pretty_print, flat, embedded_css)
 
 
 def arg_parse():
@@ -43,6 +43,13 @@ def arg_parse():
         help="flat"
     )
 
+    parser.add_argument(
+        "-e",
+        "--embedded_css",
+        action="store_true",
+        help="flat"
+    )
+
     # コマンドライン引数のパース
     args = parser.parse_args()
 
@@ -50,9 +57,10 @@ def arg_parse():
     print(f"Output directory: {args.output_dir}")
     print(f"Pretty Print: {args.pretty_print}")
     print(f"Flat: {args.flat}")
+    print(f"Embedded CSS: {args.embedded_css}")
 
     # パースされた引数を使って処理を行う
-    return args.input_file, args.output_dir, args.pretty_print, args.flat
+    return args.input_file, args.output_dir, args.pretty_print, args.flat, args.embedded_css
 
 
 if __name__ == "__main__":
