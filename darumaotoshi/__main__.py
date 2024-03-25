@@ -54,7 +54,7 @@ def arg_parse():
         "-e",
         "--embedded_css",
         action="store_true",
-        help="flat"
+        help="embedded css"
     )
 
     parser.add_argument(
