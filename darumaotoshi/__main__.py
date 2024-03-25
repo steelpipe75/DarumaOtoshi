@@ -10,7 +10,8 @@ def main():
         dict_args["output_dir"],
         pretty_print=dict_args["pretty_print"],
         flat=dict_args["flat"],
-        embedded_css=dict_args["embedded_css"]
+        embedded_css=dict_args["embedded_css"],
+        verbose=dict_args["verbose"]
     )
 
 
@@ -56,14 +57,23 @@ def arg_parse():
         help="flat"
     )
 
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="verbose"
+    )
+
     # コマンドライン引数のパース
     args = parser.parse_args()
 
-    print(f"Processing HTML file: {args.input_file}")
-    print(f"Output directory: {args.output_dir}")
-    print(f"Pretty Print: {args.pretty_print}")
-    print(f"Flat: {args.flat}")
-    print(f"Embedded CSS: {args.embedded_css}")
+    if args.verbose:
+        print(f"Processing HTML file: {args.input_file}")
+        print(f"Output directory: {args.output_dir}")
+        print(f"Pretty Print: {args.pretty_print}")
+        print(f"Flat: {args.flat}")
+        print(f"Embedded CSS: {args.embedded_css}")
+        print(f"Verbose: {args.verbose}")
 
     return {
         "input_file": args.input_file,
@@ -71,6 +81,7 @@ def arg_parse():
         "pretty_print": args.pretty_print,
         "flat": args.flat,
         "embedded_css": args.embedded_css,
+        "verbose": args.verbose
     }
 
 
