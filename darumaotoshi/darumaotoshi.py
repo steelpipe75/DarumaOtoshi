@@ -196,13 +196,19 @@ def copy_coverage_html(
             cov_parser.close()
 
 
+def verbose_print(verbose, *args):
+    if verbose:
+        print(*args)
+
+
 def darumaotoshi(
     input_index_html: str,
     output_dir: str,
     *,
     pretty_print=False,
     flat=False,
-    embedded_css=False
+    embedded_css=False,
+    verbose=False
 ) -> None:
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
@@ -219,7 +225,7 @@ def darumaotoshi(
         dst_css_path = os.path.normpath(
             (os.path.join(output_dir, "style.css")).replace("\\", "/")
         )
-        print("*** " + src_css_path + " -> " + dst_css_path)
+        verbose_print(verbose, "*** " + src_css_path + " -> " + dst_css_path)
         shutil.copy(src_css_path, dst_css_path)
         output_style_css_path = os.path.normpath(
             (os.path.join(output_dir, "style.css")).replace("\\", "/")
@@ -229,7 +235,7 @@ def darumaotoshi(
         (os.path.join(output_dir, "index.html")).replace("\\", "/")
     )
     logging.debug(f"output_index_html = {output_index_html}")
-    print("@@@ " + input_index_html + " -> " + output_index_html)
+    verbose_print(verbose, "@@@ " + input_index_html + " -> " + output_index_html)
     with open(output_index_html, "w", encoding="utf-8") as outputfile:
         with open(input_index_html, "r", encoding="utf-8") as inputfile:
             html_str = inputfile.read()
@@ -259,7 +265,7 @@ def darumaotoshi(
                 os.path.join(output_dir, cov_html_path + ".html")
             ).replace("\\", "/")
         )
-        print("### " + src_path + " -> " + dst_path)
+        verbose_print(verbose, "### " + src_path + " -> " + dst_path)
         copy_coverage_html(
             src_path, dst_path,
             output_style_css_path,
@@ -276,4 +282,5 @@ if __name__ == "__main__":
         pretty_print=True,
         flat=True,
         embedded_css=True,
+        verbose=True
     )
