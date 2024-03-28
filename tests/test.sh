@@ -11,6 +11,10 @@ echo --- c_cmake flat ---
 python -m coverage run -a -m darumaotoshi -i ./data/c_cmake/bowling_game_cli/index.html -o ./work/c_cmake/flat -f
 echo --- c_cmake embedded_css ---
 python -m coverage run -a -m darumaotoshi -i ./data/c_cmake/bowling_game_cli/index.html -o ./work/c_cmake/embedded_css -e
+echo --- c_cmake verbose ---
+python -m coverage run -a -m darumaotoshi -i ./data/c_cmake/bowling_game_cli/index.html -o ./work/c_cmake/verbose -v
+echo --- c_cmake option-all ---
+python -m coverage run -a -m darumaotoshi -i ./data/c_cmake/bowling_game_cli/index.html -o ./work/c_cmake/option-all -p -f -e -v
 
 echo --- cxx_cmake nomal ---
 python -m coverage run -a -m darumaotoshi -i ./data/cxx_cmake/bowling_game_cli/index.html -o ./work/cxx_cmake/nomal
@@ -20,6 +24,10 @@ echo --- cxx_cmake flat ---
 python -m coverage run -a -m darumaotoshi -i ./data/cxx_cmake/bowling_game_cli/index.html -o ./work/cxx_cmake/flat -f
 echo --- cxx_cmake embedded_css ---
 python -m coverage run -a -m darumaotoshi -i ./data/cxx_cmake/bowling_game_cli/index.html -o ./work/cxx_cmake/embedded_css -e
+echo --- cxx_cmake verbose ---
+python -m coverage run -a -m darumaotoshi -i ./data/cxx_cmake/bowling_game_cli/index.html -o ./work/cxx_cmake/verbose -v
+echo --- cxx_cmake option-all ---
+python -m coverage run -a -m darumaotoshi -i ./data/cxx_cmake/bowling_game_cli/index.html -o ./work/cxx_cmake/option-all -p -f -e -v
 
 echo --- coverage htm ---
 python -m coverage html
