@@ -1,3 +1,4 @@
 # DarumaOtoshi
 
-llvm-cov によって出力されたhtmlの余分なフォルダを削除する
+llvm-cov show -format=html 出力の余分なフォルダを削除する
+
