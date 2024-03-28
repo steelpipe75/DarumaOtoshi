@@ -16,7 +16,10 @@ def main():
 
 
 def arg_parse():
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        prog="darumaotoshi",
+        description="Remove excess folders from the output of 'llvm-cov show -format=html'."
+    )
 
     # 入力HTMLファイルを指定するオプションを追加
     parser.add_argument(
