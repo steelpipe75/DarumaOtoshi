@@ -21,13 +21,11 @@ def arg_parse():
         description="Remove excess folders from the output of 'llvm-cov show -format=html'."
     )
 
-    # 入力HTMLファイルを指定するオプションを追加
     parser.add_argument(
         "input_file",
         help="input HTML file",
     )
 
-    # 出力ディレクトリを指定するオプションを追加
     parser.add_argument(
         "-o",
         "--output",
