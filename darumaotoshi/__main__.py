@@ -23,10 +23,7 @@ def arg_parse():
 
     # 入力HTMLファイルを指定するオプションを追加
     parser.add_argument(
-        "-i",
-        "--input",
-        dest="input_file",
-        default="tests/data/c_cmake/bowling_game_cli/index.html",
+        "input_file",
         help="input HTML file",
     )
 
