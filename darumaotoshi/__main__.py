@@ -1,7 +1,14 @@
 import argparse
 
 from darumaotoshi import darumaotoshi
+from logging import getLogger, NullHandler, INFO
 
+logger = getLogger(__name__)
+handler = NullHandler()
+handler.setLevel(INFO)
+logger.setLevel(INFO)
+logger.addHandler(handler)
+logger.propagate = False
 
 def main():
     dict_args = arg_parse()
@@ -11,7 +18,8 @@ def main():
         pretty_print=dict_args["pretty_print"],
         flat=dict_args["flat"],
         embedded_css=dict_args["embedded_css"],
-        verbose=dict_args["verbose"]
+        verbose=dict_args["verbose"],
+        logger=logger
     )
 
 

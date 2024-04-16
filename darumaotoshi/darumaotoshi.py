@@ -2,11 +2,18 @@ import html
 import os
 import re
 import shutil
-import logging
 import zlib
 import ctypes
 from html.parser import HTMLParser
 from bs4 import BeautifulSoup
+from logging import getLogger, StreamHandler, DEBUG
+
+_default_logger = getLogger(__name__)
+handler = StreamHandler()
+handler.setLevel(DEBUG)
+_default_logger.setLevel(DEBUG)
+_default_logger.addHandler(handler)
+_default_logger.propagate = False
 
 
 # index.htmlをパースするためのクラスを定義
@@ -16,7 +23,9 @@ class indexHTMLParser(HTMLParser):
         src_css_path: str,
         flat: bool = False,
         embedded_css: bool = False,
-        *, convert_charrefs: bool = True
+        *,
+        convert_charrefs: bool = True,
+        logger=None,
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.__files = []
@@ -26,9 +35,10 @@ class indexHTMLParser(HTMLParser):
         self.__src_css_path = src_css_path
         self.__flat = flat
         self.__embedded_css = embedded_css
+        self.__logger = logger or _default_logger
 
     def handle_starttag(self, tag: str, attrs) -> None:
-        logging.debug(f"Start tag:{tag}")
+        self.__logger.debug(f"Start tag:{tag}")
         if tag == "a":
             self.__outputstr += "<" + tag
             link_target = attrs[0][1]
@@ -38,36 +48,36 @@ class indexHTMLParser(HTMLParser):
                 self.__append_required = True
             else:
                 for attr in attrs:
-                    logging.debug(f"  Attribute:{attr}")
+                    self.__logger.debug(f"  Attribute:{attr}")
                     self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
                 self.__outputstr += ">"
         else:
             need_write = True
             if self.__embedded_css:
                 if tag == "link":
-                    addstr, need_write = expand_css(attrs, self.__src_css_path)
+                    addstr, need_write = expand_css(attrs, self.__src_css_path, logger=self.__logger)
                     self.__outputstr += addstr
             if need_write:
                 self.__outputstr += "<" + tag
                 for attr in attrs:
-                    logging.debug(f"  Attribute:{attr}")
+                    self.__logger.debug(f"  Attribute:{attr}")
                     self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
                 self.__outputstr += ">"
 
     def handle_endtag(self, tag: str) -> None:
-        logging.debug(f"End tag  :{tag}")
+        self.__logger.debug(f"End tag  :{tag}")
         self.__outputstr += "</" + tag + ">"
 
     def handle_data(self, data: str) -> None:
-        logging.debug(f"Data     :{data}")
+        self.__logger.debug(f"Data     :{data}")
         if self.__append_required:
             cov_html_path = os.path.normpath(
                 os.path.join("coverage", data)
             ).replace("\\", "/")
             if self.__flat:
-                cov_html_path = flat_convert(cov_html_path)
+                cov_html_path = flat_convert(cov_html_path, logger=self.__logger)
             self.__file_info["cov_html_path"] = cov_html_path
-            logging.debug(f"cov_html_path = {cov_html_path}")
+            self.__logger.debug(f"cov_html_path = {cov_html_path}")
             self.__files.append(self.__file_info)
             self.__outputstr += " href" + "='" + cov_html_path + ".html'>"
         self.__append_required = False
@@ -87,24 +97,27 @@ class coverageHTMLParser(HTMLParser):
         self,
         css_path: str,
         embedded_css: bool = False,
-        *, convert_charrefs: bool = True
+        *,
+        convert_charrefs: bool = True,
+        logger=None,
     ) -> None:
         super().__init__(convert_charrefs=convert_charrefs)
         self.__outputstr = ""
         self.__css_path = css_path
         self.__embedded_css = embedded_css
+        self.__logger = logger or _default_logger
 
     def handle_starttag(self, tag: str, attrs) -> None:
-        logging.debug(f"Start tag:{tag}")
+        self.__logger.debug(f"Start tag:{tag}")
         if tag == "link":
             need_write = True
             if self.__embedded_css:
-                addstr, need_write = expand_css(attrs, self.__css_path)
+                addstr, need_write = expand_css(attrs, self.__css_path, logger=self.__logger)
                 self.__outputstr += addstr
             if need_write:
                 self.__outputstr += "<" + tag
                 for attr in attrs:
-                    logging.debug(f"  Attribute:{attr}")
+                    self.__logger.debug(f"  Attribute:{attr}")
                     if attr[0] == "href":
                         self.__outputstr += " " + "href" + "='"
                         self.__outputstr += self.__css_path + "'"
@@ -115,36 +128,47 @@ class coverageHTMLParser(HTMLParser):
         else:
             self.__outputstr += "<" + tag
             for attr in attrs:
-                logging.debug(f"  Attribute:{attr}")
+                self.__logger.debug(f"  Attribute:{attr}")
                 self.__outputstr += " " + attr[0] + "='" + attr[1] + "'"
             self.__outputstr += ">"
 
     def handle_endtag(self, tag: str) -> None:
-        logging.debug(f"End tag  :{tag}")
+        self.__logger.debug(f"End tag  :{tag}")
         self.__outputstr += "</" + tag + ">"
 
     def handle_data(self, data: str) -> None:
-        logging.debug(f"Data     :{data}")
+        self.__logger.debug(f"Data     :{data}")
         self.__outputstr += html.escape(data)
 
     def get_outputstr(self) -> str:
         return self.__outputstr
 
 
-def flat_convert(orig_dst_path: str) -> str:
-    logging.debug(f"orig_dst_path = {orig_dst_path}")
+def flat_convert(
+    orig_dst_path: str,
+    *,
+    logger=None,
+) -> str:
+    logger = logger or _default_logger
+    logger.debug(f"orig_dst_path = {orig_dst_path}")
     dst_dir = os.path.dirname(orig_dst_path)
-    logging.debug(f"dst_dir = {dst_dir}")
+    logger.debug(f"dst_dir = {dst_dir}")
     dst_dir_crc32 = ctypes.c_uint32(zlib.crc32(dst_dir.encode()))
-    logging.debug(f"dst_dir_crc32 = {dst_dir_crc32}")
+    logger.debug(f"dst_dir_crc32 = {dst_dir_crc32}")
     dst_dir_hex = hex(dst_dir_crc32.value & 0xFFFFFFFF)[2:].zfill(8).upper()
-    logging.debug(f"dst_dir_hex = {dst_dir_hex}")
+    logger.debug(f"dst_dir_hex = {dst_dir_hex}")
     dst_file = os.path.basename(orig_dst_path)
-    logging.debug(f"dst_file = {dst_file}")
+    logger.debug(f"dst_file = {dst_file}")
     return "_d_" + dst_dir_hex + "_" + dst_file
 
 
-def expand_css(attrs, css_path):
+def expand_css(
+    attrs,
+    css_path,
+    *,
+    logger=None,
+):
+    logger = logger or _default_logger
     need_expand = False
     if (('rel', 'stylesheet') in attrs
             and ('type', 'text/css') in attrs):
@@ -163,8 +187,11 @@ def copy_coverage_html(
     dst_path: str,
     output_style_css_path: str,
     pretty_print: bool,
-    embedded_css: bool
+    embedded_css: bool,
+    *,
+    logger=None,
 ) -> None:
+    logger = logger or _default_logger
     if os.path.exists(src_path):
         dst_dir = os.path.dirname(dst_path)
         if not os.path.exists(dst_dir):
@@ -177,7 +204,7 @@ def copy_coverage_html(
                 os.path.relpath(output_style_css_path, dst_dir)
             )
             css_path = relative_path.replace("\\", "/")
-        logging.debug(f"css_path = {css_path}")
+        logger.debug(f"css_path = {css_path}")
 
         with open(dst_path, "w", encoding="utf-8") as dst_file:
             with open(src_path, "r", encoding="utf-8") as src_file:
@@ -186,7 +213,7 @@ def copy_coverage_html(
             dst_file.write("<!doctype html>")
 
             # HTMLをパース
-            cov_parser = coverageHTMLParser(css_path, embedded_css)
+            cov_parser = coverageHTMLParser(css_path, embedded_css, logger=logger)
             cov_parser.feed(src_html)
             outputstr = cov_parser.get_outputstr()
             if pretty_print:
@@ -208,12 +235,14 @@ def darumaotoshi(
     pretty_print=False,
     flat=False,
     embedded_css=False,
-    verbose=False
+    verbose=False,
+    logger=None,
 ) -> None:
+    logger = logger or _default_logger
     input_index_html = os.path.normpath(input_index_html.replace("\\", "/"))
 
     input_dir = os.path.dirname(input_index_html)
-    logging.debug(f"input_dir = {input_dir}")
+    logger.debug(f"input_dir = {input_dir}")
 
     os.makedirs(output_dir, exist_ok=True)
     src_css_path = os.path.normpath(
@@ -230,21 +259,21 @@ def darumaotoshi(
         output_style_css_path = os.path.normpath(
             (os.path.join(output_dir, "style.css")).replace("\\", "/")
         )
-    logging.debug(f"output_style_css_path = {output_style_css_path}")
+    logger.debug(f"output_style_css_path = {output_style_css_path}")
     output_index_html = os.path.normpath(
         (os.path.join(output_dir, "index.html")).replace("\\", "/")
     )
-    logging.debug(f"output_index_html = {output_index_html}")
+    logger.debug(f"output_index_html = {output_index_html}")
     verbose_print(verbose, "@@@ " + input_index_html + " -> " + output_index_html)
     with open(output_index_html, "w", encoding="utf-8") as outputfile:
         with open(input_index_html, "r", encoding="utf-8") as inputfile:
             html_str = inputfile.read()
-            logging.debug(f"html_str = {html_str}")
+            logger.debug(f"html_str = {html_str}")
 
         outputfile.write("<!doctype html>")
 
         # HTMLをパース
-        parser = indexHTMLParser(src_css_path, flat, embedded_css)
+        parser = indexHTMLParser(src_css_path, flat, embedded_css, logger=logger)
         parser.feed(html_str)
         outputstr = parser.get_outputstr()
         if pretty_print:
@@ -253,7 +282,7 @@ def darumaotoshi(
         outputfile.write(outputstr)
         parser.close()
 
-    logging.debug(f"parser.get_files() = {parser.get_files()}")
+    logger.debug(f"parser.get_files() = {parser.get_files()}")
 
     for file_info in parser.get_files():
         src_path = os.path.normpath(
@@ -270,12 +299,12 @@ def darumaotoshi(
             src_path, dst_path,
             output_style_css_path,
             pretty_print,
-            embedded_css
+            embedded_css,
+            logger=logger
         )
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
     darumaotoshi(
         "tests/data/c_cmake/bowling_game_cli/index.html",
         "output/",
